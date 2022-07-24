@@ -20,9 +20,9 @@ public class UserController {
         this.userService = userService;
     }
 
-    @GetMapping("/username")
+    @GetMapping()
     public String showUserInfo(Principal principal, Model userModel) {
-        userModel.addAttribute("user", userService.getUserUsername(principal.getName()));
-        return "user/username";
+        userModel.addAttribute("user", userService.findByUsername(principal.getName()));
+        return "user";
     }
 }

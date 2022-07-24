@@ -1,28 +1,25 @@
 package ru.kata.spring.boot_security.demo.configs;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.web.filter.HiddenHttpMethodFilter;
-import ru.kata.spring.boot_security.demo.service.UserServiceImpl;
-
-import javax.sql.DataSource;
-import java.util.Arrays;
+import ru.kata.spring.boot_security.demo.service.UserService;
 
 @Configuration
 @EnableWebSecurity
 public class WebSecurityConfig {
     private final SuccessUserHandler successUserHandler;
 
-    public WebSecurityConfig(SuccessUserHandler successUserHandler, UserServiceImpl userService) {
+    final UserService userService;
+
+    public WebSecurityConfig(SuccessUserHandler successUserHandler, UserService userService) {
         this.successUserHandler = successUserHandler;
         this.userService = userService;
     }
@@ -30,13 +27,16 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
+                .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/admin/**").hasRole("ADMIN")
-                .antMatchers("/user/**").hasRole("USER")
+                .antMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .antMatchers("/", "/index").permitAll()
                 .anyRequest().authenticated()
                 .and()
-                .formLogin().successHandler(successUserHandler)
+                .formLogin()
+                .loginPage("/login")
+                .successHandler(successUserHandler)
                 .permitAll()
                 .and()
                 .logout()
@@ -46,13 +46,14 @@ public class WebSecurityConfig {
         return http.build();
     }
 
+
     @Bean
-    public JdbcUserDetailsManager jdbcUserDetailsManager(DataSource dataSource) {
-        return new JdbcUserDetailsManager(dataSource);
+    protected DaoAuthenticationProvider daoAuthenticationProvider() {
+        DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider();
+        daoAuthenticationProvider.setUserDetailsService(userService);
+        return daoAuthenticationProvider;
     }
 
-
-    final UserServiceImpl userService;
     @Autowired
     protected void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userService);

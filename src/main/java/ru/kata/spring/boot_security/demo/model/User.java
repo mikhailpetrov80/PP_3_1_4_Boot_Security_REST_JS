@@ -2,11 +2,13 @@ package ru.kata.spring.boot_security.demo.model;
 
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import javax.persistence.*;
 import java.util.Collection;
-import java.util.Set;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Data
 @Entity
@@ -34,19 +36,27 @@ public class User implements UserDetails {
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
-    private Set<Role> roles;
+    private List<Role> roles;
 
-    public Set<Role> getRoles() {
+    public List<Role> getRoles() {
         return roles;
-    }
-
-    public void addRole(Role role) {
-        this.roles.add(role);
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return getRoles();
+
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.getAuthority()))
+                .collect(Collectors.toList());
+    }
+
+    public String getRolesAsString() {
+        StringBuilder sb = new StringBuilder();
+        for (Role role : roles) {
+            sb.append(role.getName().substring(5));
+            sb.append(" ");
+        }
+        return sb.toString();
     }
 
     @Override
@@ -72,6 +82,19 @@ public class User implements UserDetails {
     @Override
     public boolean isCredentialsNonExpired() {
         return true;
+    }
+
+    public User(long id, String name, String username, String email, String password, List<Role> roles) {
+        this.id = id;
+        this.name = name;
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.roles = roles;
+    }
+
+    public User() {
+
     }
 
     @Override

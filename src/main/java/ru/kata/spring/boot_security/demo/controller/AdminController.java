@@ -1,10 +1,13 @@
 package ru.kata.spring.boot_security.demo.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import ru.kata.spring.boot_security.demo.model.User;
+import ru.kata.spring.boot_security.demo.service.RoleService;
 import ru.kata.spring.boot_security.demo.service.UserService;
 
 @Controller
@@ -12,53 +15,46 @@ import ru.kata.spring.boot_security.demo.service.UserService;
 public class AdminController {
 
     private final UserService userService;
+    private final RoleService roleService;
+
 
     @Autowired
-    public AdminController(UserService userService) {
+    public AdminController(UserService userService, RoleService roleService) {
         this.userService = userService;
+        this.roleService = roleService;
     }
 
-    @GetMapping("/users")
-    public String printUsers(Model userModel) {
+    @GetMapping()
+    public String getUsers(@AuthenticationPrincipal UserDetails userDetails, Model userModel) {
+        User user = userService.findByUsername(userDetails.getUsername());
         userModel.addAttribute("users", userService.getListUsers());
-        return "admin/users";
+        userModel.addAttribute("user", user);
+        userModel.addAttribute("newUser", new User());
+        userModel.addAttribute("roles", user.getRoles());
+        return "/admin";
     }
 
-    @GetMapping("/addUser")
-    public String newUser(Model userModel) {
-        userModel.addAttribute("user", new User());
-        return "admin/addUser";
-    }
-
-    @PostMapping("/users")
-    public String createUser(@ModelAttribute("user") User user) {
+    @PostMapping("/addUser")
+    public String createUser(@ModelAttribute("user") User user,
+                             @RequestParam(value = "nameRoles", required = false) String roles) {
+        user.setRoles(roleService.getByName(roles));
         userService.addUser(user);
-        return "redirect:/admin/users";
+
+        return "redirect:/admin";
     }
 
-    @GetMapping("/users/{id}")
-    public String getByIdUser(@PathVariable("id") long id, Model userModel) {
-        userModel.addAttribute("user", userService.getUserId(id));
-        return "admin/user";
-    }
-
-    @DeleteMapping("/users/{id}")
+    @DeleteMapping("/delete/{id}")
     public String deleteUser(@PathVariable("id") long id) {
         userService.deleteUserId(id);
-        return "redirect:/admin/users";
+        return "redirect:/admin";
     }
 
-    @GetMapping("/users/{id}/update")
-    public String editUser(Model userModel, @PathVariable("id") long id) {
-        userModel.addAttribute("user", userService.getUserId(id));
-        return "admin/update";
-    }
-
-
-    @PatchMapping("/users/{id}/admin/users")
-    public String updateUser(@ModelAttribute("user") User user) {
+    @PatchMapping("/update/{id}")
+    public String update(@ModelAttribute("user") User user, @PathVariable("id") long id,
+                         @RequestParam(value = "nameRoles", required = false) String roles) {
+        user.setRoles(roleService.getByName(roles));
         userService.updateUser(user);
-        return "redirect:/admin/users";
+        return "redirect:/admin";
     }
 
 }
