@@ -77,14 +77,8 @@
                                         <th>Role</th>
                                     </tr>
                                     </thead>
-                                    <tbody>
-                                    <tr>
-                                        <td th:text="${user.getId()}"></td>
-                                        <td th:text="${user.getName}"></td>
-                                        <td th:text="${user.getEmail}"></td>
-                                        <td th:text="${user.getUsername}"></td>
-                                        <td th:text="${user.getRolesAsString}"></td>
-                                    </tr>
+                                    <tbody id="User">
+
                                     </tbody>
                                 </table>
                             </div>
@@ -97,6 +91,7 @@
     </div>
 </div>
 
+<script type="text/javascript" src="user.js"></script>
 
 <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
         integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
